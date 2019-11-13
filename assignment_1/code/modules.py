@@ -26,9 +26,14 @@ class LinearModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    self.params = {'weight': None, 'bias': None}
-    self.grads = {'weight': None, 'bias': None}
-    raise NotImplementedError
+    self.params = {
+      'weight': np.random.normal(0, 0.0001, (out_features, in_features)),
+      'bias': np.zeros((out_features, 1))
+    }
+    self.grads = {
+      'weight': np.zeros((out_features, in_features)),
+      'bias': np.zeros((out_features, 1))
+    }
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -51,7 +56,8 @@ class LinearModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.x = x
+    out = x @ self.params['weight'].T + self.params['bias'].T
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -75,7 +81,9 @@ class LinearModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.grads['weight'] = dout.T @ self.x
+    self.grads['bias'] = dout
+    dx = dout @ self.params['weight']
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -100,7 +108,7 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.neg_slope = neg_slope
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -123,7 +131,8 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.x = x
+    out = max(0, x) + min(0, self.neg_slope * x)
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -146,7 +155,7 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    dx = (self.x > 0) + self.neg_slope * (self.x <= 0)
     ########################
     # END OF YOUR CODE    #
     #######################    
