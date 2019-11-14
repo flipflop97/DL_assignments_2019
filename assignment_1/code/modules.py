@@ -132,7 +132,7 @@ class LeakyReLUModule(object):
     # PUT YOUR CODE HERE  #
     #######################
     self.x = x
-    out = max(0, x) + min(0, self.neg_slope * x)
+    out = x * (x > 0) + self.neg_slope * x * (x <= 0)
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -155,7 +155,8 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    dx = (self.x > 0) + self.neg_slope * (self.x <= 0)
+    grad = (self.x > 0) + self.neg_slope * (self.x <= 0)
+    dx = grad * dout
     ########################
     # END OF YOUR CODE    #
     #######################    
@@ -186,7 +187,9 @@ class SoftMaxModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    exp = np.exp(x - x.max(axis=-1, keepdims=True))
+    out = exp / exp.sum(axis=-1, keepdims=True)
+    self.out = out
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -197,7 +200,7 @@ class SoftMaxModule(object):
     """
     Backward pass.
     Args:
-      dout: gradients of the previous modul
+      dout: gradients of the previous module
     Returns:
       dx: gradients with respect to the input of the module
 
@@ -208,7 +211,7 @@ class SoftMaxModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    dx = self.out * (dout - (self.out * dout).sum(axis=-1, keepdims=True))
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -236,7 +239,7 @@ class CrossEntropyModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    out = -np.log(y * x, out = np.zeros_like(y), where = y != 0).sum()
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -259,7 +262,7 @@ class CrossEntropyModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    dx = np.divide(-y, y*x, out = np.zeros_like(y), where = y != 0)
     ########################
     # END OF YOUR CODE    #
     #######################
