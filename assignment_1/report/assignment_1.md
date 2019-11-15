@@ -32,6 +32,8 @@ $$\begin{aligned}
 \frac {\partial L} {\partial \widetilde{x}^{(N)}} &= \left( - \frac{1}{t^\top x^{(N)}} t \right) \left( \frac{1}{\sum\exp(x)} \mathrm{diag}(\exp(x)) - \frac{1}{(\sum\exp(x))^2} \exp(x) \exp(x)^\top \right)
 \end{aligned}$$
 
+...
+
 
 ### 1.1 - NumPy implementation
 
@@ -39,8 +41,27 @@ $$\begin{aligned}
 
 
 
-## PyTorch MLP
+## 2 - PyTorch MLP
 
-![PyTorch Loss](pytorch_loss.svg)
+The loss and accuracy curves of the PyTorch MLP are shown below. The default parameters are used, together with the *Adam* optimizer.
 
-![PyTorch Accuracy](pytorch_accuracy.svg)
+![PyTorch MLP Loss](pytorch_mlp_loss.svg)
+
+![PyTorch MLP Accuracy](pytorch_mlp_accuracy.svg)
+
+
+## 3 - Custom Module: Batch Normalization
+
+...
+
+
+## 4 - PyTorch CNN
+
+The loss and accuracy curves of the PyTorch CNN are shown below. The default parameters are used.
+
+![PyTorch CNN Loss](pytorch_cnn_loss.svg)
+
+![PyTorch CNN Accuracy](pytorch_cnn_accuracy.svg)
+
+
+

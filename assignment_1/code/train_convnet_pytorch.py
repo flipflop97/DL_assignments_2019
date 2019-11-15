@@ -12,6 +12,8 @@ import os
 from convnet_pytorch import ConvNet
 import cifar10_utils
 
+import torch
+
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
 BATCH_SIZE_DEFAULT = 32
@@ -45,7 +47,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  accuracy = torch.mean((predictions.argmax(axis=-1) == targets.argmax(axis=-1)).float())
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -67,7 +69,83 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  data = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  n_channels = np.prod(data['train'].images.shape[1])
+  n_classes = data['train'].labels.shape[1]
+
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  cnn = ConvNet(n_channels, n_classes).to(device)
+  cel = torch.nn.CrossEntropyLoss().to(device)
+
+  params = cnn.parameters()
+  optimizer = torch.optim.Adam(params, lr=FLAGS.learning_rate)
+
+  test_input = data['test'].images
+  test_target = data['test'].labels
+
+  test_input = torch.tensor(test_input, device=device)
+  test_target = torch.tensor(test_target, device=device)
+
+  train_losses = torch.zeros(FLAGS.max_steps, device=device)
+  train_accuracies = torch.zeros(FLAGS.max_steps, device=device)
+  test_losses = torch.zeros(FLAGS.max_steps // FLAGS.eval_freq, device=device)
+  test_accuracies = torch.zeros(FLAGS.max_steps // FLAGS.eval_freq, device=device)
+
+  for step in range(FLAGS.max_steps):
+    optimizer.zero_grad()
+
+    train_input, train_target = data['train'].next_batch(FLAGS.batch_size)
+
+    train_input = torch.tensor(train_input, device=device)
+    train_target = torch.tensor(train_target, device=device)
+
+    # Use a subset of test data as this fits on my GPU
+    test_input, test_target = data['test'].next_batch(4096)
+    test_input = torch.tensor(test_input, device=device)
+    test_target = torch.tensor(test_target, device=device)
+
+    train_output = cnn.forward(train_input)
+    train_loss = cel.forward(train_output, train_target.argmax(axis=-1))
+    train_accuracy = accuracy(train_output, train_target)
+
+    if step % FLAGS.eval_freq == 0:
+      with torch.no_grad():
+        test_output = cnn.forward(test_input)
+        test_loss = cel.forward(test_output, test_target.argmax(axis=-1))
+        test_accuracy = accuracy(test_output, test_target)
+    
+        print('{}\t{}\t{}'.format(step, test_loss.item(), test_accuracy.item()))
+
+    train_losses[step] = train_loss.detach()
+    train_accuracies[step] = train_accuracy
+    test_losses[step // FLAGS.eval_freq] = test_loss.detach()
+    test_accuracies[step // FLAGS.eval_freq] = test_accuracy
+
+    train_loss.backward()
+    optimizer.step()
+  
+  from matplotlib import pyplot as plt
+
+  test_steps = torch.range(0, FLAGS.max_steps-1, FLAGS.eval_freq)
+
+  plt.plot(train_losses.cpu(), label='Train')
+  plt.plot(test_steps, test_losses.cpu(), label='Test')
+  plt.title('PyTorch CNN')
+  plt.xlabel('Step')
+  plt.ylabel('Loss')
+  plt.legend()
+  plt.savefig('../report/pytorch_cnn_loss.svg', format='svg')
+
+  plt.close()
+  
+  plt.plot(train_accuracies.cpu(), label='Train')
+  plt.plot(test_steps, test_accuracies.cpu(), label='Test')
+  plt.title('PyTorch CNN')
+  plt.xlabel('Step')
+  plt.ylabel('Accuracy')
+  plt.legend()
+  plt.savefig('../report/pytorch_cnn_accuracy.svg', format='svg')
   ########################
   # END OF YOUR CODE    #
   #######################

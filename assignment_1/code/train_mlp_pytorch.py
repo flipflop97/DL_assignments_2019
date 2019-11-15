@@ -100,8 +100,8 @@ def train():
 
   train_losses = torch.zeros(FLAGS.max_steps, device=device)
   train_accuracies = torch.zeros(FLAGS.max_steps, device=device)
-  test_losses = torch.zeros(FLAGS.max_steps, device=device)
-  test_accuracies = torch.zeros(FLAGS.max_steps, device=device)
+  test_losses = torch.zeros(FLAGS.max_steps // FLAGS.eval_freq, device=device)
+  test_accuracies = torch.zeros(FLAGS.max_steps // FLAGS.eval_freq, device=device)
 
   for step in range(FLAGS.max_steps):
     optimizer.zero_grad()
@@ -116,38 +116,43 @@ def train():
     train_loss = cel.forward(train_output, train_target.argmax(axis=-1))
     train_accuracy = accuracy(train_output, train_target)
 
-    with torch.no_grad():
-      test_output = mlp.forward(test_input)
-      test_loss = cel.forward(test_output, test_target.argmax(axis=-1))
-      test_accuracy = accuracy(test_output, test_target)
+    if step % FLAGS.eval_freq == 0:
+      with torch.no_grad():
+        test_output = mlp.forward(test_input)
+        test_loss = cel.forward(test_output, test_target.argmax(axis=-1))
+        test_accuracy = accuracy(test_output, test_target)
+
+        print('{}\t{}\t{}'.format(step, test_loss.item(), test_accuracy.item()))
 
     train_losses[step] = train_loss.detach()
     train_accuracies[step] = train_accuracy
-    test_losses[step] = test_loss.detach()
-    test_accuracies[step] = test_accuracy
+    test_losses[step // FLAGS.eval_freq] = test_loss.detach()
+    test_accuracies[step // FLAGS.eval_freq] = test_accuracy
 
     train_loss.backward()
     optimizer.step()
   
   from matplotlib import pyplot as plt
 
+  test_steps = torch.range(0, FLAGS.max_steps-1, FLAGS.eval_freq)
+
   plt.plot(train_losses.cpu(), label='Train')
-  plt.plot(test_losses.cpu(), label='Test')
-  plt.title('PyTorch')
+  plt.plot(test_steps, test_losses.cpu(), label='Test')
+  plt.title('PyTorch MLP')
   plt.xlabel('Step')
   plt.ylabel('Loss')
   plt.legend()
-  plt.savefig('../report/pytorch_loss.svg', format='svg')
+  plt.savefig('../report/pytorch_mlp_loss.svg', format='svg')
 
   plt.close()
   
   plt.plot(train_accuracies.cpu(), label='Train')
-  plt.plot(test_accuracies.cpu(), label='Test')
-  plt.title('PyTorch')
+  plt.plot(test_steps, test_accuracies.cpu(), label='Test')
+  plt.title('PyTorch MLP')
   plt.xlabel('Step')
   plt.ylabel('Accuracy')
   plt.legend()
-  plt.savefig('../report/pytorch_accuracy.svg', format='svg')
+  plt.savefig('../report/pytorch_mlp_accuracy.svg', format='svg')
   ########################
   # END OF YOUR CODE    #
   #######################

@@ -89,9 +89,6 @@ def train():
   mlp = MLP(n_inputs, dnn_hidden_units, n_classes, neg_slope)
   cel = CrossEntropyModule()
 
-  test_input = data['test'].images.reshape(data['test'].num_examples, -1)
-  test_target = data['test'].labels
-
   for step in range(FLAGS.max_steps):
     batch, train_target = data['train'].next_batch(FLAGS.batch_size)
     train_input = batch.reshape(FLAGS.batch_size, -1)

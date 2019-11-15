@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from torch import nn
+
 class ConvNet(nn.Module):
   """
   This class implements a Convolutional Neural Network in PyTorch.
@@ -29,7 +31,69 @@ class ConvNet(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    super(ConvNet, self).__init__()
+
+    neg_slope = 0.02
+
+    self.conv = nn.Sequential(
+      # conv1
+      nn.Conv2d(3, 64, 3, 1, 1),
+      nn.BatchNorm2d(64),
+      nn.LeakyReLU(neg_slope),
+
+      # maxpool1
+      nn.MaxPool2d(3, 2, 1),
+
+      # conv2
+      nn.Conv2d(64, 128, 3, 1, 1),
+      nn.BatchNorm2d(128),
+      nn.LeakyReLU(neg_slope),
+
+      # maxpool2
+      nn.MaxPool2d(3, 2, 1),
+
+      # conv3_a
+      nn.Conv2d(128, 256, 3, 1, 1),
+      nn.BatchNorm2d(256),
+      nn.LeakyReLU(neg_slope),
+
+      # conv3_b
+      nn.Conv2d(256, 256, 3, 1, 1),
+      nn.BatchNorm2d(256),
+      nn.LeakyReLU(neg_slope),
+
+      # maxpool3
+      nn.MaxPool2d(3, 2, 1),
+
+      # conv4_a
+      nn.Conv2d(256, 512, 3, 1, 1),
+      nn.BatchNorm2d(512),
+      nn.LeakyReLU(neg_slope),
+
+      # conv4_b
+      nn.Conv2d(512, 512, 3, 1, 1),
+      nn.BatchNorm2d(512),
+      nn.LeakyReLU(neg_slope),
+
+      # maxpool4
+      nn.MaxPool2d(3, 2, 1),
+
+      # conv5_a
+      nn.Conv2d(512, 512, 3, 1, 1),
+      nn.BatchNorm2d(512),
+      nn.LeakyReLU(neg_slope),
+
+      # conv5_b
+      nn.Conv2d(512, 512, 3, 1, 1),
+      nn.BatchNorm2d(512),
+      nn.LeakyReLU(neg_slope),
+
+      # maxpool5
+      nn.MaxPool2d(3, 2, 1)
+    )
+
+    # linear
+    self.linear = nn.Linear(512, n_classes)
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -51,7 +115,8 @@ class ConvNet(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    conv = self.conv.forward(x)
+    out = self.linear(conv.view(conv.size(axis=0), -1))
     ########################
     # END OF YOUR CODE    #
     #######################

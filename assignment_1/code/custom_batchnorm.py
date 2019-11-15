@@ -105,8 +105,8 @@ class CustomBatchNormManualFunction(torch.autograd.Function):
       ctx: context object handling storing and retrival of tensors and constants and specifying
            whether tensors need gradients in backward pass
       input: input tensor of shape (n_batch, n_neurons)
-      gamma: variance scaling tensor, applied per neuron, shpae (n_neurons)
-      beta: mean bias tensor, applied per neuron, shpae (n_neurons)
+      gamma: variance scaling tensor, applied per neuron, shape (n_neurons)
+      beta: mean bias tensor, applied per neuron, shape (n_neurons)
       eps: small float added to the variance for stability
     Returns:
       out: batch-normalized tensor
@@ -123,7 +123,10 @@ class CustomBatchNormManualFunction(torch.autograd.Function):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-
+    mean = input.mean(axis=0)
+    var = input.var(axis=0, unbiased=False)
+    x = (input - mean) / torch.sqrt(var + eps)
+    out = gamma * x + beta
     ########################
     # END OF YOUR CODE    #
     #######################
