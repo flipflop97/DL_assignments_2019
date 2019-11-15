@@ -10,7 +10,7 @@ import argparse
 import numpy as np
 import os
 from mlp_numpy import MLP
-from modules import CrossEntropyModule
+from modules import CrossEntropyModule, LinearModule
 import cifar10_utils
 
 # Default constants
@@ -33,9 +33,9 @@ def accuracy(predictions, targets):
   
   Args:
     predictions: 2D float array of size [batch_size, n_classes]
-    labels: 2D int array of size [batch_size, n_classes]
-            with one-hot encoding. Ground truth labels for
-            each sample in the batch
+    targets: 2D int array of size [batch_size, n_classes]
+             with one-hot encoding. Ground truth labels for
+             each sample in the batch
   Returns:
     accuracy: scalar float, the accuracy of predictions,
               i.e. the average correct predictions over the whole batch
@@ -47,7 +47,8 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  predictions_target = np.ones(out=np.zeros_like(predictions), where=np.argmax(predictions, axis=-1))
+  accuracy = np.sum(predictions_target == targets) / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -80,7 +81,32 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  data = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  n_inputs = np.prod(data['train'].images.shape[1:])
+  n_classes = data['train'].labels.shape[1]
+
+  mlp = MLP(n_inputs, dnn_hidden_units, n_classes, neg_slope)
+  cel = CrossEntropyModule()
+
+  test_input = data['test'].images.reshape(data['test'].num_examples, -1)
+  test_target = data['test'].labels
+
+  for step in range(FLAGS.max_steps):
+    batch, train_target = data['train'].next_batch(FLAGS.batch_size)
+    train_input = batch.reshape(FLAGS.batch_size, -1)
+
+    train_output = mlp.forward(train_input)
+    loss = cel.forward(train_output, train_target)
+    print(loss)
+
+    dout = cel.backward(train_output, train_target)
+    mlp.backward(dout)
+
+    for layer in mlp.layers:
+      if isinstance(layer, LinearModule):
+        layer.params['weight'] -= FLAGS.learning_rate * layer.grads['weight']
+        layer.params['bias'] -= FLAGS.learning_rate * layer.grads['bias']
   ########################
   # END OF YOUR CODE    #
   #######################

@@ -82,7 +82,7 @@ class LinearModule(object):
     # PUT YOUR CODE HERE  #
     #######################
     self.grads['weight'] = dout.T @ self.x
-    self.grads['bias'] = dout
+    self.grads['bias'] = dout.T.sum(axis=-1, keepdims=True)
     dx = dout @ self.params['weight']
     ########################
     # END OF YOUR CODE    #
@@ -211,7 +211,7 @@ class SoftMaxModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    dx = self.out * (dout - (self.out * dout).sum(axis=-1, keepdims=True))
+    dx = dout # I have no idea
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -239,7 +239,7 @@ class CrossEntropyModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    out = -np.log(y * x, out = np.zeros_like(y), where = y != 0).sum()
+    out = -np.log(y*x, out=np.zeros_like(y), where=(y*x != 0)).sum()
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -255,14 +255,15 @@ class CrossEntropyModule(object):
     Returns:
       dx: gradient of the loss with the respect to the input x.
 
-    TODO:
+    TODO:    dx = np.divide(-y, y*x, out=np.zeros_like(y), where=(y*x != 0))
+
     Implement backward pass of the module.
     """
 
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    dx = np.divide(-y, y*x, out = np.zeros_like(y), where = y != 0)
+    dx = np.divide(-y, y*x, out=np.zeros_like(y), where=(y*x != 0))
     ########################
     # END OF YOUR CODE    #
     #######################

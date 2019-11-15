@@ -11,6 +11,7 @@ import numpy as np
 import os
 from mlp_pytorch import MLP
 import cifar10_utils
+import torch
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '100'
@@ -32,9 +33,9 @@ def accuracy(predictions, targets):
   
   Args:
     predictions: 2D float array of size [batch_size, n_classes]
-    labels: 2D int array of size [batch_size, n_classes]
-            with one-hot encoding. Ground truth labels for
-            each sample in the batch
+    targets: 2D int array of size [batch_size, n_classes]
+             with one-hot encoding. Ground truth labels for
+             each sample in the batch
   Returns:
     accuracy: scalar float, the accuracy of predictions,
               i.e. the average correct predictions over the whole batch
@@ -46,7 +47,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  accuracy = torch.mean((predictions.argmax(axis=-1) == targets.argmax(axis=-1)).float())
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -79,7 +80,55 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  data = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  n_inputs = np.prod(data['train'].images.shape[1:])
+  n_classes = data['train'].labels.shape[1]
+
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  mlp = MLP(n_inputs, dnn_hidden_units, n_classes, neg_slope).to(device)
+  cel = torch.nn.CrossEntropyLoss().to(device)
+
+  params = mlp.parameters()
+  optimizer = torch.optim.Adam(params, lr=FLAGS.learning_rate)
+
+  test_input = data['test'].images.reshape(data['test'].num_examples, -1)
+  test_target = data['test'].labels
+
+  losses = torch.zeros(FLAGS.max_steps, device=device)
+  accuracies = torch.zeros(FLAGS.max_steps, device=device)
+
+  for step in range(FLAGS.max_steps):
+    optimizer.zero_grad()
+
+    batch, train_target = data['train'].next_batch(FLAGS.batch_size)
+    train_input = batch.reshape(FLAGS.batch_size, -1)
+
+    train_input = torch.tensor(train_input, device=device)
+    train_target = torch.tensor(train_target, device=device)
+
+    out = mlp.forward(train_input)
+    loss = cel.forward(out, train_target.argmax(axis=-1))
+
+    loss.backward()
+    optimizer.step()
+
+    losses[step] = loss.detach()
+    accuracies[step] = accuracy(out, train_target)
+  
+  from matplotlib import pyplot as plt
+
+  plt.plot(losses.cpu())
+  plt.title('PyTorch')
+  plt.xlabel('step')
+  plt.ylabel('loss')
+  plt.show()
+  
+  plt.plot(accuracies.cpu())
+  plt.title('PyTorch')
+  plt.xlabel('step')
+  plt.ylabel('accuracy')
+  plt.show()
   ########################
   # END OF YOUR CODE    #
   #######################
