@@ -37,7 +37,10 @@ class CustomBatchNormAutograd(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-
+    self.n_neurons = n_neurons
+    self.eps = eps
+    self.gamma = torch.nn.Parameter(torch.ones(n_neurons))
+    self.beta = torch.nn.Parameter(torch.zeros(n_neurons))
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -60,7 +63,13 @@ class CustomBatchNormAutograd(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
+    if input.shape[1] != self.n_neurons:
+      raise ValueError(f'CustomBatchNormAutograd.forward: input should have a shape of (x, {self.n_neurons})')
 
+    mean = input.mean(axis=0)
+    var = input.var(axis=0, unbiased=False)
+    x = (input - mean) / torch.sqrt(var + self.eps)
+    out = self.gamma * x + self.beta
     ########################
     # END OF YOUR CODE    #
     #######################
