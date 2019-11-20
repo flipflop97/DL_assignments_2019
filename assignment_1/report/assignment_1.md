@@ -40,7 +40,6 @@ $$\begin{aligned}
 ...
 
 
-
 ## 2 - PyTorch MLP
 
 The loss and accuracy curves of the PyTorch MLP are shown below. The default parameters are used, together with the *Adam* optimizer.
