@@ -37,6 +37,8 @@ if __name__ == "__main__":
 from part2.dataset import TextDataset
 from part2.model import TextGenerationModel
 
+import random
+
 ################################################################################
 
 def train(config):
@@ -91,9 +93,20 @@ def train(config):
                     accuracy, loss
             ))
 
-        if step == config.sample_every:
-            # Generate some sentences by sampling from the model
-            pass
+        if step % config.sample_every == 0:
+            with torch.no_grad():
+                pred = torch.randint(dataset.vocab_size, (1, 1)).long()
+                x = torch.nn.functional.one_hot(pred, num_classes=dataset.vocab_size).float().to(device)
+                keys = [pred.cpu().item()]
+
+                for i in range(100):
+                    y = model.forward(x)
+                    pred = y.argmax(-1)
+                    keys.append(pred.cpu()[:, -1].item())
+                    y = torch.nn.functional.one_hot(pred, num_classes=dataset.vocab_size).float().to(device)
+                    x = torch.cat((x, y[:, [-1], :]), 1)
+
+                print(dataset.convert_to_string(keys))
 
         if step == config.train_steps:
             # If you receive a PyTorch data-loader error, check this bug report:
