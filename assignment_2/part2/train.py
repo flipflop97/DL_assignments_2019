@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # MIT License
 #
 # Copyright (c) 2019 Tom Runia
@@ -28,6 +30,10 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+if __name__ == "__main__":
+    import sys
+    sys.path.append("..")
+
 from part2.dataset import TextDataset
 from part2.model import TextGenerationModel
 
@@ -35,31 +41,42 @@ from part2.model import TextGenerationModel
 
 def train(config):
 
-    # Initialize the device which to run the model on
-    device = torch.device(config.device)
+    # Initialize the device which to run the model on   <- copypasta?
+    device = torch.device('cuda:0')                   
 
-    # Initialize the model that we are going to use
-    model = TextGenerationModel( ... )  # fixme
-
-    # Initialize the dataset and data loader (note the +1)
-    dataset = TextDataset( ... )  # fixme
+    # Initialize the dataset and data loader (note the +1)   <- copypasta?
+    dataset = TextDataset(config.txt_file, config.seq_length)
     data_loader = DataLoader(dataset, config.batch_size, num_workers=1)
 
+    # Initialize the model that we are going to use
+    model = TextGenerationModel(config.batch_size, config.seq_length, dataset.vocab_size,
+                                config.lstm_num_hidden, config.lstm_num_layers, device) 
+
     # Setup the loss and optimizer
-    criterion = None  # fixme
-    optimizer = None  # fixme
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.RMSprop(model.parameters(), lr=config.learning_rate)
+
+    loss_list = torch.empty(config.train_steps+1, device=device)
+    accuracy_list = torch.empty(config.train_steps+1, device=device)
 
     for step, (batch_inputs, batch_targets) in enumerate(data_loader):
+        batch_inputs = torch.nn.functional.one_hot(batch_inputs, num_classes=dataset.vocab_size).float().to(device)
+        batch_targets = batch_targets.to(device)
 
         # Only for time measurement of step through network
         t1 = time.time()
 
-        #######################################################
-        # Add more code here ...
-        #######################################################
+        out = model.forward(batch_inputs)
 
-        loss = np.inf   # fixme
-        accuracy = 0.0  # fixme
+        loss = criterion(out.transpose(2, 1), batch_targets)
+        accuracy = (out.argmax(-1) == batch_targets).float().mean()
+
+        loss_list[step] = loss.detach()
+        accuracy_list[step] = accuracy.detach()
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
 
         # Just for time measurement
         t2 = time.time()
@@ -85,6 +102,22 @@ def train(config):
 
     print('Done training.')
 
+    from matplotlib import pyplot as plt
+
+    loss_list = loss_list.cpu()
+    accuracy_list = accuracy_list.cpu()
+
+    plt.plot(loss_list[:step], label='Loss')
+    plt.plot(accuracy_list[:step], label='Accuracy')
+
+    plt.title('Generative LSTM')
+    plt.xlabel('Train step')
+    plt.ylabel('Value')
+    plt.legend()
+
+    plt.savefig('generative_lstm_loss_accuracy.svg', format='svg')
+    plt.close()
+
 
  ################################################################################
  ################################################################################
@@ -109,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate_step', type=int, default=5000, help='Learning rate step')
     parser.add_argument('--dropout_keep_prob', type=float, default=1.0, help='Dropout keep probability')
 
-    parser.add_argument('--train_steps', type=int, default=1e6, help='Number of training steps')
+    parser.add_argument('--train_steps', type=int, default=1000000, help='Number of training steps')
     parser.add_argument('--max_norm', type=float, default=5.0, help='--')
 
     # Misc params

@@ -72,6 +72,8 @@ def train(config):
 
         ############################################################################
         # QUESTION: what happens here and why?
+        #   ANSWER: Gradients are clipped at max_norm to work around exploding gradients.
+        #           (Please make this a report question, I almost forgot it.)
         ############################################################################
         torch.nn.utils.clip_grad_norm(model.parameters(), max_norm=config.max_norm)
         ############################################################################
